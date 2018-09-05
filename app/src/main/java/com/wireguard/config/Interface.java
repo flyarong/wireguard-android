@@ -29,12 +29,12 @@ import java.util.List;
 
 public class Interface {
     private final List<InetNetwork> addressList;
+    private final Context context = Application.get();
     private final List<InetAddress> dnsList;
     private final List<String> excludedApplications;
     @Nullable private Keypair keypair;
     private int listenPort;
     private int mtu;
-    private final Context context = Application.get();
 
     public Interface() {
         addressList = new ArrayList<>();
@@ -95,15 +95,15 @@ public class Interface {
         return dnsList.toArray(new InetAddress[dnsList.size()]);
     }
 
+    public String[] getExcludedApplications() {
+        return excludedApplications.toArray(new String[excludedApplications.size()]);
+    }
+
     @Nullable
     private String getExcludedApplicationsString() {
         if (excludedApplications.isEmpty())
             return null;
         return Attribute.iterableToString(excludedApplications);
-    }
-
-    public String[] getExcludedApplications() {
-        return excludedApplications.toArray(new String[excludedApplications.size()]);
     }
 
     public int getListenPort() {
