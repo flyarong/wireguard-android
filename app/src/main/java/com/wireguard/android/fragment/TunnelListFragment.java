@@ -43,8 +43,8 @@ import com.wireguard.android.widget.MultiselectableRelativeLayout;
 import com.wireguard.android.widget.fab.FloatingActionsMenuRecyclerViewScrollListener;
 import com.wireguard.config.Config;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,13 +80,13 @@ public class TunnelListFragment extends BaseFragment {
     private void importTunnel(@NonNull final String configText) {
         try {
             // Ensure the config text is parseable before proceeding…
-            Config.from(configText);
+            Config.parse(new ByteArrayInputStream(configText.getBytes(StandardCharsets.UTF_8)));
 
             // Config text is valid, now create the tunnel…
             final FragmentManager fragmentManager = getFragmentManager();
             if (fragmentManager != null)
                 ConfigNamingDialogFragment.newInstance(configText).show(fragmentManager, null);
-        } catch (final Exception exception) {
+        } catch (final IllegalArgumentException | IOException exception) {
             onTunnelImportFinished(Collections.emptyList(), Collections.singletonList(exception));
         }
     }
@@ -123,7 +123,6 @@ public class TunnelListFragment extends BaseFragment {
 
             if (isZip) {
                 try (ZipInputStream zip = new ZipInputStream(contentResolver.openInputStream(uri))) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(zip, StandardCharsets.UTF_8));
                     ZipEntry entry;
                     while ((entry = zip.getNextEntry()) != null) {
                         if (entry.isDirectory())
@@ -141,7 +140,7 @@ public class TunnelListFragment extends BaseFragment {
                             continue;
                         Config config = null;
                         try {
-                            config = Config.from(reader);
+                            config = Config.parse(zip);
                         } catch (Exception e) {
                             throwables.add(e);
                         }
@@ -151,7 +150,7 @@ public class TunnelListFragment extends BaseFragment {
                 }
             } else {
                 futureTunnels.add(Application.getTunnelManager().create(name,
-                        Config.from(contentResolver.openInputStream(uri))).toCompletableFuture());
+                        Config.parse(contentResolver.openInputStream(uri))).toCompletableFuture());
             }
 
             if (futureTunnels.isEmpty()) {
